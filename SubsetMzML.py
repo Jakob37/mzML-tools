@@ -12,9 +12,16 @@ def main():
     args = parse_arguments()
 
     register_namespaces()
+
     tree = et.parse(args.input)
-    root = tree.getroot()
-    run_node = root.find(prepend_ns('run'))
+
+    if args.is_indexed:
+        root = tree.getroot()
+        mzml_root = root.find(prepend_ns('mzML'))
+    else:
+        mzml_root = tree.getroot()
+
+    run_node = mzml_root.find(prepend_ns('run'))
     spectrum_list_node = run_node.find(prepend_ns('spectrumList'))
 
     spectrum_list = spectrum_list_node.findall(prepend_ns('spectrum'))
@@ -34,6 +41,8 @@ def register_namespaces():
     et.register_namespace('xsi', "http://www.w3.org/2001/XMLSchema-instance")
     et.register_namespace('schemaLocation', "http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd")
 
+    et.register_namespace('schemaLocation', 'http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.2_idx.xsd')
+
 
 def prepend_ns(s):
     return "{" + NAMESPACE + "}" + s
@@ -49,7 +58,7 @@ def calculate_stats_dict(spectrum_list):
         spec_dict = get_spect_dict(spectrum)
         if spec_dict['ms level'] == '1':
             stats_dict['MS1'] += 1
-        elif spec_dict['ms level'] =='2':
+        elif spec_dict['ms level'] == '2':
             stats_dict['MS2'] += 1
         else:
             raise ValueError('Unknown MS level: {}'.format(spec_dict['ms level']))
@@ -72,6 +81,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', required=True)
     parser.add_argument('-o', '--output')
+
+    parser.add_argument('--is_indexed', action='store_true', default=False)
 
     parser.add_argument('--check_only', action='store_true', help='Print information about sample')
 
